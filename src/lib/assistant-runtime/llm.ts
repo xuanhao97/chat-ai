@@ -107,7 +107,8 @@ export function getModelConfig(
 ): ModelConfig {
   switch (provider) {
     case "gemini": {
-      const name: GoogleGenerativeAIModelId = modelName || "gemini-2.5-pro";
+      const name: GoogleGenerativeAIModelId =
+        modelName || "gemini-2.5-flash-lite";
       // Get API key from environment variable
       const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
