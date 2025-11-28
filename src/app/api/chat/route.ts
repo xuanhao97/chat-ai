@@ -1,7 +1,6 @@
 import { createChatHandler } from "@/lib/assistant-runtime/runtime";
 import type { ModelProvider } from "@/lib/assistant-runtime/llm";
 import type { UIMessage } from "ai";
-import { getMcpTools } from "@/lib/assistant-runtime/mcp-tools";
 /**
  * Chat API Route
  *
@@ -30,9 +29,17 @@ export async function POST(req: Request) {
       "gemini") as ModelProvider;
     const modelName = body.modelName || body.metadata?.modelName;
 
+    // Get forceToolUse option (default: true - bắt buộc sử dụng tools)
+    const forceToolUse =
+      body.forceToolUse !== undefined
+        ? body.forceToolUse
+        : body.metadata?.forceToolUse !== undefined
+          ? body.metadata.forceToolUse
+          : true;
+
     // Get frontend tools from request body
     // AssistantChatTransport automatically forwards frontend tools
-    const tools = await getMcpTools();
+    const tools = body.tools || body.metadata?.tools;
 
     // Create chat handler with provider, messages, and frontend tools
     const result = await createChatHandler({
@@ -41,6 +48,7 @@ export async function POST(req: Request) {
       modelProvider,
       modelName,
       tools,
+      forceToolUse,
     });
 
     return result.toUIMessageStreamResponse();

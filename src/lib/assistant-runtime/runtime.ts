@@ -16,6 +16,7 @@ export interface ChatHandlerOptions {
   modelName?: string;
   system?: string; // System message forwarded from AssistantChatTransport
   tools?: Record<string, unknown>; // Frontend tools forwarded from AssistantChatTransport
+  forceToolUse?: boolean; // Bắt buộc LLM phải sử dụng ít nhất một tool
 }
 
 /**
@@ -26,16 +27,29 @@ function createStreamTextWithModel(
   modelConfig: ReturnType<typeof getModelConfig>,
   messages: UIMessage[],
   system: string | undefined,
-  allTools: Record<string, unknown>
+  allTools: Record<string, unknown>,
+  forceToolUse: boolean = false
 ) {
   try {
+    // Nếu bắt buộc sử dụng tools, thêm system message yêu cầu
+    let finalSystem = system;
+    if (forceToolUse && Object.keys(allTools).length > 0) {
+      const toolUseInstruction = `IMPORTANT: You MUST use at least one of the available tools to answer the user's question. Do not provide a direct answer without using a tool. Available tools: ${Object.keys(allTools).join(", ")}.`;
+      finalSystem = finalSystem
+        ? `${finalSystem}\n\n${toolUseInstruction}`
+        : toolUseInstruction;
+    }
+
     return streamText({
       model: modelConfig.model,
       messages: convertToModelMessages(messages),
       stopWhen: stepCountIs(10),
-      ...(system ? { system } : {}),
+      ...(finalSystem ? { system: finalSystem } : {}),
       // @ts-expect-error - tools type mismatch between AI SDK and assistant-ui
       tools: allTools,
+      // Bắt buộc tool use bằng cách set maxSteps tối thiểu
+      maxSteps:
+        forceToolUse && Object.keys(allTools).length > 0 ? 5 : undefined,
     });
   } catch (error) {
     console.error("[ERROR] createStreamTextWithModel failed: ", error);
@@ -61,12 +75,14 @@ export async function createChatHandler(options: ChatHandlerOptions) {
     modelProvider = "gemini",
     modelName,
     tools,
+    forceToolUse = true, // Mặc định bắt buộc sử dụng tools
   } = options;
 
   console.log("[DEBUG] messages: ", messages);
   console.log("[DEBUG] system: ", system);
   console.log("[DEBUG] modelProvider: ", modelProvider);
   console.log("[DEBUG] modelName: ", modelName);
+  console.log("[DEBUG] forceToolUse: ", forceToolUse);
 
   // Validate messages
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -98,7 +114,23 @@ export async function createChatHandler(options: ChatHandlerOptions) {
   console.log("[DEBUG] MCP tools count: ", Object.keys(allTools).length);
   console.log("[DEBUG] All tools keys: ", Object.keys(allTools));
 
+  // Kiểm tra nếu bắt buộc sử dụng tools nhưng không có tools nào
+  // Tự động disable forceToolUse nếu không có tools
+  let finalForceToolUse = forceToolUse;
+  if (forceToolUse && Object.keys(allTools).length === 0) {
+    console.warn(
+      "[WARNING] forceToolUse is enabled but no tools are available. Disabling tool enforcement."
+    );
+    finalForceToolUse = false;
+  }
+
   // Get model config and create streamText directly
   const modelConfig = getModelConfig(modelProvider, modelName);
-  return createStreamTextWithModel(modelConfig, messages, system, allTools);
+  return createStreamTextWithModel(
+    modelConfig,
+    messages,
+    system,
+    allTools,
+    finalForceToolUse
+  );
 }
