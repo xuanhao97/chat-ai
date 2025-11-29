@@ -1,18 +1,18 @@
-"use client";
+import { Navbar } from "@/components/navbar";
+import { ChatContent } from "@/components/chat-content";
 
-import { Thread } from "@/components/assistant-ui/thread";
-import { AssistantRuntimeProvider } from "@assistant-ui/react";
-import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
-
+/**
+ * Home page component
+ *
+ * Purpose: Server component that renders chat interface
+ * - Mode is managed by nuqs in client components
+ * - No need to parse search params here as nuqs handles it
+ */
 export default function Home() {
-  // Using the new simplified useChatRuntime hook
-  const runtime = useChatRuntime();
-
   return (
-    <AssistantRuntimeProvider runtime={runtime}>
-      <div className="h-full">
-        <Thread />
-      </div>
-    </AssistantRuntimeProvider>
+    <div className="flex h-screen flex-col">
+      <Navbar />
+      <ChatContent />
+    </div>
   );
 }

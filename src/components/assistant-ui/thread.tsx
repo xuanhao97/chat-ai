@@ -32,7 +32,7 @@ export const Thread: FC = () => {
         ["--thread-max-width" as string]: "42rem",
       }}
     >
-      <ThreadPrimitive.Viewport className="flex h-full flex-col items-center overflow-y-scroll scroll-smooth bg-inherit px-4 pt-8">
+      <ThreadPrimitive.Viewport className="flex h-full flex-col items-center overflow-y-scroll scroll-smooth bg-inherit px-2 sm:px-4 pt-8">
         <ThreadWelcome />
 
         <ThreadPrimitive.Messages
@@ -47,7 +47,7 @@ export const Thread: FC = () => {
           <div className="min-h-8 flex-grow" />
         </ThreadPrimitive.If>
 
-        <div className="sticky bottom-0 mt-3 flex w-full max-w-[var(--thread-max-width)] flex-col items-center justify-end rounded-t-lg bg-inherit pb-4">
+        <div className="sticky bottom-0 mt-3 flex w-full max-w-[var(--thread-max-width)] flex-col items-center justify-end rounded-t-lg bg-inherit pb-4 px-2 sm:px-0">
           <ThreadScrollToBottom />
           <Composer />
         </div>
@@ -60,7 +60,7 @@ const ThreadScrollToBottom: FC = () => {
   return (
     <ThreadPrimitive.ScrollToBottom asChild>
       <TooltipIconButton
-        tooltip="Scroll to bottom"
+        tooltip="Cuộn xuống dưới"
         variant="outline"
         className="absolute -top-8 rounded-full disabled:invisible"
       >
@@ -74,8 +74,10 @@ const ThreadWelcome: FC = () => {
   return (
     <ThreadPrimitive.Empty>
       <div className="flex w-full max-w-[var(--thread-max-width)] flex-grow flex-col">
-        <div className="flex w-full flex-grow flex-col items-center justify-center">
-          <p className="mt-4 font-medium">How can I help you today?</p>
+        <div className="flex w-full flex-grow flex-col items-center justify-center px-4">
+          <p className="mt-4 text-base sm:text-lg font-medium text-center">
+            Xin chào! Tôi có thể hỗ trợ gì cho bạn hôm nay?
+          </p>
         </div>
         <ThreadWelcomeSuggestions />
       </div>
@@ -85,25 +87,25 @@ const ThreadWelcome: FC = () => {
 
 const ThreadWelcomeSuggestions: FC = () => {
   return (
-    <div className="mt-3 flex w-full items-stretch justify-center gap-4">
+    <div className="mt-3 flex w-full flex-col sm:flex-row items-stretch justify-center gap-3 sm:gap-4 px-4">
       <ThreadPrimitive.Suggestion
-        className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
-        prompt="Cách tìm lại tài khoản Arobid"
+        className="hover:bg-muted/80 flex max-w-sm sm:grow sm:basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
+        prompt="Làm thế nào để tạo tài khoản trên Arobid?"
         clearComposer
         send
       >
-        <span className="line-clamp-2 text-sm font-semibold text-ellipsis">
-          Cách tìm lại tài khoản Arobid
+        <span className="line-clamp-2 text-sm font-semibold text-ellipsis text-center">
+          Làm thế nào để tạo tài khoản trên Arobid?
         </span>
       </ThreadPrimitive.Suggestion>
       <ThreadPrimitive.Suggestion
-        className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
-        prompt="Các sự kiện đang diễn ra tại Arobid"
+        className="hover:bg-muted/80 flex max-w-sm sm:grow sm:basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
+        prompt="Các sự kiện đang diễn ra tại Arobid?"
         clearComposer
         send
       >
-        <span className="line-clamp-2 text-sm font-semibold text-ellipsis">
-          Các sự kiện đang diễn ra tại Arobid
+        <span className="line-clamp-2 text-sm font-semibold text-ellipsis text-center">
+          Các sự kiện đang diễn ra tại Arobid?
         </span>
       </ThreadPrimitive.Suggestion>
     </div>
@@ -112,12 +114,12 @@ const ThreadWelcomeSuggestions: FC = () => {
 
 const Composer: FC = () => {
   return (
-    <ComposerPrimitive.Root className="focus-within:border-ring/20 flex w-full flex-wrap items-end rounded-lg border bg-inherit px-2.5 shadow-sm transition-colors ease-in">
+    <ComposerPrimitive.Root className="focus-within:border-ring/20 flex w-full flex-wrap items-end rounded-lg border bg-inherit px-2 sm:px-2.5 shadow-sm transition-colors ease-in">
       <ComposerPrimitive.Input
         rows={1}
         autoFocus
-        placeholder="Write a message..."
-        className="placeholder:text-muted-foreground max-h-40 flex-grow resize-none border-none bg-transparent px-2 py-4 text-sm outline-none focus:ring-0 disabled:cursor-not-allowed"
+        placeholder="Nhập tin nhắn..."
+        className="placeholder:text-muted-foreground max-h-40 flex-grow resize-none border-none bg-transparent px-1 sm:px-2 py-3 sm:py-4 text-sm outline-none focus:ring-0 disabled:cursor-not-allowed"
       />
       <ComposerAction />
     </ComposerPrimitive.Root>
@@ -130,7 +132,7 @@ const ComposerAction: FC = () => {
       <ThreadPrimitive.If running={false}>
         <ComposerPrimitive.Send asChild>
           <TooltipIconButton
-            tooltip="Send"
+            tooltip="Gửi"
             variant="default"
             className="my-2.5 size-8 p-2 transition-opacity ease-in"
           >
@@ -141,7 +143,7 @@ const ComposerAction: FC = () => {
       <ThreadPrimitive.If running>
         <ComposerPrimitive.Cancel asChild>
           <TooltipIconButton
-            tooltip="Cancel"
+            tooltip="Hủy"
             variant="default"
             className="my-2.5 size-8 p-2 transition-opacity ease-in"
           >
@@ -175,7 +177,7 @@ const UserActionBar: FC = () => {
       className="col-start-1 row-start-2 mt-2.5 mr-3 flex flex-col items-end"
     >
       <ActionBarPrimitive.Edit asChild>
-        <TooltipIconButton tooltip="Edit">
+        <TooltipIconButton tooltip="Chỉnh sửa">
           <PencilIcon />
         </TooltipIconButton>
       </ActionBarPrimitive.Edit>
@@ -190,10 +192,10 @@ const EditComposer: FC = () => {
 
       <div className="mx-3 mb-3 flex items-center justify-center gap-2 self-end">
         <ComposerPrimitive.Cancel asChild>
-          <Button variant="ghost">Cancel</Button>
+          <Button variant="ghost">Hủy</Button>
         </ComposerPrimitive.Cancel>
         <ComposerPrimitive.Send asChild>
-          <Button>Send</Button>
+          <Button>Gửi</Button>
         </ComposerPrimitive.Send>
       </div>
     </ComposerPrimitive.Root>
@@ -236,7 +238,7 @@ const AssistantActionBar: FC = () => {
       className="text-muted-foreground data-[floating]:bg-background col-start-3 row-start-2 -ml-1 flex gap-1 data-[floating]:absolute data-[floating]:rounded-md data-[floating]:border data-[floating]:p-1 data-[floating]:shadow-sm"
     >
       <ActionBarPrimitive.Copy asChild>
-        <TooltipIconButton tooltip="Copy">
+        <TooltipIconButton tooltip="Sao chép">
           <MessagePrimitive.If copied>
             <CheckIcon />
           </MessagePrimitive.If>
@@ -246,7 +248,7 @@ const AssistantActionBar: FC = () => {
         </TooltipIconButton>
       </ActionBarPrimitive.Copy>
       <ActionBarPrimitive.Reload asChild>
-        <TooltipIconButton tooltip="Refresh">
+        <TooltipIconButton tooltip="Làm mới">
           <RefreshCwIcon />
         </TooltipIconButton>
       </ActionBarPrimitive.Reload>
@@ -268,7 +270,7 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
       {...rest}
     >
       <BranchPickerPrimitive.Previous asChild>
-        <TooltipIconButton tooltip="Previous">
+        <TooltipIconButton tooltip="Trước">
           <ChevronLeftIcon />
         </TooltipIconButton>
       </BranchPickerPrimitive.Previous>
@@ -276,7 +278,7 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
         <BranchPickerPrimitive.Number /> / <BranchPickerPrimitive.Count />
       </span>
       <BranchPickerPrimitive.Next asChild>
-        <TooltipIconButton tooltip="Next">
+        <TooltipIconButton tooltip="Tiếp">
           <ChevronRightIcon />
         </TooltipIconButton>
       </BranchPickerPrimitive.Next>

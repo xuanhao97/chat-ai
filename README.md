@@ -5,26 +5,31 @@ AI Assistant application built with Next.js, assistant-ui, Vercel AI SDK, and MC
 ## ✨ Features
 
 - 🤖 **Multiple LLM Providers**: Support for Google Gemini and OpenAI
+- 💬 **Dual Chat Modes**: Switch between Chatbot mode and LLM mode
+- 🔄 **URL State Management**: Mode switching via search params using nuqs
 - 💬 **Modern Chat UI**: Beautiful, customizable chat interface using assistant-ui
-- 🔧 **MCP Tools Integration**: Dynamic tool loading from MCP server
+- 🔧 **MCP Tools Integration**: Dynamic tool loading from MCP servers via HTTP/SSE
 - ⚡ **Streaming Responses**: Real-time streaming responses for better UX
-- 🎨 **Beautiful UI**: Tailwind CSS with Radix UI components
+- 🎨 **Beautiful UI**: Tailwind CSS v4 with Radix UI components
 - 🔄 **Tool Calling**: Automatic tool execution when LLM requests
 - 📝 **Markdown Support**: Rich markdown rendering with syntax highlighting
+- 📊 **Logging System**: Custom logger with context, metadata, and adapter pattern (Sentry support)
 - 🌐 **Type-safe**: Full TypeScript support with strict type checking
 
 ## 🚀 Tech Stack
 
 - **Framework**: Next.js 16 (App Router)
+- **React**: React 19
 - **UI Library**: assistant-ui (@assistant-ui/react)
 - **AI SDK**: Vercel AI SDK v5 (ai)
 - **LLM Providers**:
-  - Google Gemini (@ai-sdk/google) - Default: `gemini-2.5-pro`
+  - Google Gemini (@ai-sdk/google) - Default: `gemini-2.5-flash`
   - OpenAI (@ai-sdk/openai) - Default: `gpt-4o-mini`
-- **MCP Integration**: Model Context Protocol via HTTP/JSON-RPC
+- **MCP Integration**: Model Context Protocol SDK (@modelcontextprotocol/sdk)
 - **Styling**: Tailwind CSS v4
 - **UI Components**: Radix UI primitives
 - **State Management**: Zustand
+- **URL State**: nuqs for type-safe search params management
 - **Language**: TypeScript (strict mode)
 
 ## 📋 Prerequisites
@@ -59,8 +64,15 @@ Create `.env.local` file in the root directory:
 GOOGLE_GENERATIVE_AI_API_KEY=your_google_gemini_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
 
-# Optional: MCP server URL (defaults to the provided URL)
-MCP_SERVER_URL=https://hao-mcp.vercel.app/mcp
+# Required for MCP integration
+MCP_SERVER_URL=https://your-mcp-server.com/mcp
+AROBID_BACKEND_URL=https://your-backend-url.com
+
+# Optional: Logger configuration
+LOGGER_ENABLED=true
+
+# Optional: Additional MCP headers
+# MCP_HEADER_Authorization=Bearer token
 ```
 
 **Where to get API keys:**
@@ -80,102 +92,93 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ```
 src/
-├── app/
+├── app/                          # Next.js app directory
 │   ├── api/
-│   │   └── chat/
-│   │       └── route.ts          # Chat API endpoint (POST /api/chat)
-│   ├── layout.tsx                # Root layout with metadata
-│   ├── page.tsx                  # Home page with AssistantRuntimeProvider
-│   └── globals.css               # Global styles and Tailwind directives
-│
-├── components/
-│   ├── assistant-ui/             # Custom assistant-ui components
-│   │   ├── thread.tsx           # Main Thread component (chat UI)
-│   │   ├── markdown-text.tsx    # Markdown renderer with syntax highlighting
-│   │   ├── attachment.tsx       # Attachment handling
-│   │   ├── tool-fallback.tsx    # Tool execution UI
-│   │   └── tooltip-icon-button.tsx # Icon button with tooltip
-│   └── ui/                       # Reusable UI components (Radix UI)
-│       ├── avatar.tsx
-│       ├── button.tsx
-│       ├── dialog.tsx
-│       └── tooltip.tsx
-│
-└── lib/
-    ├── assistant-runtime/        # Assistant runtime logic
-    │   ├── llm.ts               # LLM provider configuration
-    │   ├── mcp-client.ts        # MCP server client (JSON-RPC)
-    │   ├── mcp-tools.ts         # MCP tools adapter (MCP → AI SDK)
-    │   └── runtime.ts           # Chat handler with tool integration
-    └── utils.ts                  # Utility functions (cn, etc.)
+│   │   ├── chat/route.ts        # LLM chat API endpoint
+│   │   └── chat-bot/route.ts     # Chatbot API endpoint
+│   ├── layout.tsx                # Root layout with NuqsAdapter
+│   └── page.tsx                 # Home page (server component)
+├── components/                   # React components
+│   ├── assistant-ui/            # Custom assistant-ui components
+│   ├── chat-content.tsx         # Chat content client component
+│   ├── navbar.tsx               # Navigation with mode switcher
+│   └── ui/                      # Reusable UI components
+├── hooks/                        # React hooks
+│   └── use-chat-runtime.ts      # Chat runtime with mode switching
+├── services/                      # Business logic services
+│   └── chatbot.ts               # Chatbot service
+├── stores/                       # State management
+│   └── chat-mode-store.ts       # Chat mode store (Zustand)
+└── lib/                          # Core libraries
+    ├── assistant-runtime/       # LLM & chat runtime
+    ├── fetch-client/            # Fetch client library (see README)
+    ├── mcp-core/                # MCP client library (see README)
+    ├── mcp-intergrations/       # MCP integration layer
+    ├── loggers/                 # Logger library (see README)
+    ├── streaming-response/      # Streaming response utilities (see README)
+    ├── search-params.ts         # Search params schema (nuqs)
+    └── utils.ts
 ```
 
 ## 🏗️ Architecture
 
-### Frontend (Next.js App Router)
+### Overview
 
-- **`page.tsx`**: Sets up `AssistantRuntimeProvider` with `useChatRuntime` hook
-- **`Thread` Component**: Main chat interface with messages, composer, and tool UI
-- **`AssistantChatTransport`**: Automatically connects to `/api/chat` endpoint
+The application follows a modular architecture:
 
-### Backend (API Route)
+- **Frontend**: Next.js App Router with assistant-ui for chat interface
+- **Backend**: API route (`/api/chat`) handles chat requests and streaming
+- **LLM Integration**: Supports Gemini and OpenAI via Vercel AI SDK
+- **MCP Tools**: Dynamic tool loading from MCP servers
+- **Logging**: Custom logger with adapter pattern
 
-- **`/api/chat`**: POST endpoint that:
-  1. Receives messages from assistant-ui
-  2. Parses provider and model preferences
-  3. Loads MCP tools dynamically
-  4. Creates chat handler with selected LLM provider
-  5. Returns streaming response
+### Core Libraries
 
-### LLM Provider System
+- **[Fetch Client](src/lib/fetch-client/README.md)**: Reusable, type-safe fetch client with baseUrl support, streaming, comprehensive error handling, and configurable parser error handling.
 
-- **`llm.ts`**: Centralized provider configuration
-  - Supports Gemini and OpenAI
-  - Validates API keys
-  - Returns configured model instances
+- **[MCP Core](src/lib/mcp-core/README.md)**: Pure TypeScript library for managing MCP client connections, transport adapters (HTTP/SSE), and tools retrieval.
 
-### MCP Integration
+- **[Logger](src/lib/loggers/README.md)**: Custom logger with context, metadata, colors, debug filtering, and adapter pattern (Sentry, Grafana support).
 
-- **`mcp-client.ts`**: HTTP client for MCP server
-  - Uses JSON-RPC 2.0 protocol
-  - Handles both JSON and SSE response formats
-  - Methods: `listTools()`, `callTool(name, args)`
+- **[Streaming Response](src/lib/streaming-response/README.md)**: Utility library for converting text strings to Server-Sent Events (SSE) streaming responses compatible with assistant-ui format.
 
-- **`mcp-tools.ts`**: Adapter layer
-  - Converts MCP tool definitions to AI SDK tool format
-  - Registers tools with the runtime
-  - Handles tool execution via MCP server
+- **MCP Integrations**: Application-level integration layer that auto-initializes MCP clients from environment variables and provides convenience functions.
 
-### Runtime
-
-- **`runtime.ts`**: Main chat handler
-  - Integrates LLM provider with MCP tools
-  - Supports frontend tools and backend MCP tools
-  - Returns streaming response compatible with assistant-ui
+- **Assistant Runtime**: LLM provider configuration and chat handler that integrates LLM with MCP tools, supports frontend tools, and handles streaming responses.
 
 ## 💻 Usage
 
 ### Basic Usage
 
 1. Open the app in your browser
-2. Start chatting! The assistant will use the default provider (Gemini)
+2. Use the mode switcher in the navbar to choose between:
+   - **Chatbot Mode**: Uses the chatbot API endpoint (`/api/chat-bot`)
+   - **LLM Mode**: Uses the LLM API endpoint (`/api/chat`) with Gemini/OpenAI
+3. Start chatting! The mode is persisted in the URL search params
+
+### Chat Modes
+
+- **Chatbot Mode** (`?mode=chatbot`): Direct chatbot integration, optimized for specific use cases
+- **LLM Mode** (`?mode=llm`): Full LLM capabilities with tool calling support
+
+The mode is managed via URL search params using `nuqs`, ensuring clean state management and shareable URLs.
 
 ### Switching LLM Providers
 
-The app defaults to **Gemini** (`gemini-2.5-pro`). You can switch providers programmatically by passing `modelProvider` in the request metadata.
+In LLM mode, the app defaults to **Gemini** (`gemini-2.5-flash`). You can switch providers programmatically by passing `modelProvider` in the request metadata.
 
 ### MCP Tools
 
-MCP tools are automatically loaded when the app starts. If the MCP server is available:
+MCP tools are automatically loaded when the app starts via `mcp-integrations`:
 
-- Tools will appear in the tool execution UI when LLM calls them
-- Tool results will be included in the conversation
+- Tools are fetched from all registered MCP servers
+- Tools appear in the tool execution UI when LLM calls them
+- Tool results are included in the conversation
+- If MCP servers are unavailable, the app continues to work normally (graceful degradation)
 
-If the MCP server is unavailable:
+### Force Tool Use
 
-- The app continues to work normally
-- Tool calling will be disabled
-- No error is shown (graceful degradation)
+By default, the app forces the LLM to use at least one tool when tools are available. This can be disabled by setting `forceToolUse: false` in the request.
 
 ## 🔧 Development
 
@@ -212,11 +215,14 @@ pnpm format:check  # Check formatting without fixing
 
 ## 🌐 Environment Variables
 
-| Variable                       | Required | Description             | Default                          |
-| ------------------------------ | -------- | ----------------------- | -------------------------------- |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | Yes\*    | Google Gemini API key   | -                                |
-| `OPENAI_API_KEY`               | Yes\*    | OpenAI API key          | -                                |
-| `MCP_SERVER_URL`               | No       | MCP server endpoint URL | `https://hao-mcp.vercel.app/mcp` |
+| Variable                       | Required | Description                     | Default |
+| ------------------------------ | -------- | ------------------------------- | ------- |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Yes\*    | Google Gemini API key           | -       |
+| `OPENAI_API_KEY`               | Yes\*    | OpenAI API key                  | -       |
+| `MCP_SERVER_URL`               | Yes      | MCP server endpoint URL         | -       |
+| `AROBID_BACKEND_URL`           | Yes      | Arobid backend URL for MCP      | -       |
+| `LOGGER_ENABLED`               | No       | Enable/disable logger           | `true`  |
+| `MCP_HEADER_*`                 | No       | Additional MCP headers (prefix) | -       |
 
 \* At least one LLM provider API key is required.
 
@@ -224,23 +230,18 @@ pnpm format:check  # Check formatting without fixing
 
 ### Default Models
 
-- **Gemini**: `gemini-2.5-pro`
+- **Gemini**: `gemini-2.5-flash`
 - **OpenAI**: `gpt-4o-mini`
 
 You can override the model name by passing `modelName` in the request metadata.
 
 ### MCP Server
 
-The MCP server should implement the JSON-RPC 2.0 protocol with the following methods:
+The MCP server should implement the Model Context Protocol. See [MCP Core README](src/lib/mcp-core/README.md) for details on HTTP/SSE transport support and client management.
 
-- **`tools/list`**: Returns array of available tools
-- **`tools/call`**: Executes a tool with given arguments
+### Logger Configuration
 
-The client automatically handles:
-
-- Request/response formatting
-- Error handling
-- Both JSON and SSE response formats
+See [Logger README](src/lib/loggers/README.md) for configuration options, adapter setup, and usage examples.
 
 ## 🐛 Troubleshooting
 
@@ -260,7 +261,7 @@ The client automatically handles:
 
 **Solutions**:
 
-- Check `MCP_SERVER_URL` in `.env.local`
+- Check `MCP_SERVER_URL` and `AROBID_BACKEND_URL` in `.env.local`
 - Verify network connectivity to MCP server
 - Check browser console for MCP-related errors
 - The app works without MCP tools (they're optional)
@@ -284,6 +285,13 @@ The client automatically handles:
 - Delete `node_modules` and `pnpm-lock.yaml`
 - Run `pnpm install` again
 - Clear Next.js cache: `rm -rf .next`
+
+## 📚 Documentation
+
+- **Fetch Client Library**: [`src/lib/fetch-client/README.md`](src/lib/fetch-client/README.md)
+- **MCP Core Library**: [`src/lib/mcp-core/README.md`](src/lib/mcp-core/README.md)
+- **Logger Library**: [`src/lib/loggers/README.md`](src/lib/loggers/README.md)
+- **Streaming Response Library**: [`src/lib/streaming-response/README.md`](src/lib/streaming-response/README.md)
 
 ## 📚 Learn More
 

@@ -11,7 +11,6 @@ export type ModelProvider = "gemini" | "openai";
 export interface ModelConfig {
   provider: ModelProvider;
   model: ReturnType<typeof google> | ReturnType<typeof openai>;
-  modelName: string;
 }
 
 type GoogleGenerativeAIModelId =
@@ -95,20 +94,56 @@ type OpenAIResponsesModelId =
   | (string & {});
 
 /**
+ * Options for getModelConfig function
+ */
+export interface GetModelConfigOptions {
+  /**
+   * LLM provider to use
+   * @default "gemini"
+   */
+  provider?: ModelProvider;
+  /**
+   * Optional model name override
+   * If not provided, uses default model for the provider:
+   * - Gemini: "gemini-2.5-flash"
+   * - OpenAI: "gpt-4o-mini"
+   */
+  modelName?: string;
+}
+
+/**
  * Get model configuration based on provider and optional model name
  *
- * @param provider - "gemini" (default) or "openai"
- * @param modelName - Optional model name override
- * @returns ModelConfig with provider, model instance, and model name
+ * Purpose: Creates and configures an LLM model instance for the specified provider
+ * - Validates API keys are present
+ * - Returns configured model instance ready for use with AI SDK
+ *
+ * @param options - Configuration options
+ * @param options.provider - "gemini" (default) or "openai"
+ * @param options.modelName - Optional model name override
+ * @returns ModelConfig with provider and model instance
+ * @throws Error if API key is missing or provider is unknown
+ *
+ * @example
+ * ```ts
+ * // Use default Gemini model
+ * const config = getModelConfig({ provider: "gemini" });
+ *
+ * // Use specific OpenAI model
+ * const config = getModelConfig({
+ *   provider: "openai",
+ *   modelName: "gpt-4o"
+ * });
+ * ```
  */
 export function getModelConfig(
-  provider: ModelProvider = "gemini",
-  modelName?: string
+  options: GetModelConfigOptions = {}
 ): ModelConfig {
+  const { provider = "gemini", modelName } = options;
+
   switch (provider) {
     case "gemini": {
       const name: GoogleGenerativeAIModelId = modelName || "gemini-2.5-flash";
-      // Get API key from environment variable
       const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
       if (!apiKey) {
@@ -121,11 +156,11 @@ export function getModelConfig(
       return {
         provider: "gemini",
         model: google(name),
-        modelName: name,
       };
     }
     case "openai": {
-      // TODO: Verify exact model name for gpt-4.1-mini or use gpt-4o-mini
+      // Default to gpt-4o-mini for cost-effectiveness
+      // gpt-4.1-mini is available but gpt-4o-mini is more stable and widely supported
       const name: OpenAIResponsesModelId = modelName || "gpt-4o-mini";
       const apiKey = process.env.OPENAI_API_KEY;
 
@@ -140,7 +175,6 @@ export function getModelConfig(
       return {
         provider: "openai",
         model: openai(name),
-        modelName: name,
       };
     }
     default:
