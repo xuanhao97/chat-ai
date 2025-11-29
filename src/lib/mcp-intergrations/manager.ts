@@ -7,7 +7,7 @@
 
 import { MCPClientManager, type MCPClientConfig } from "@/lib/mcp-core";
 import { getArobidMCPConfig } from "./arobid";
-import { getChatbotTool } from "./chatbot-tool";
+// import { getChatbotTool } from "./chatbot-tool";
 import { createLogger } from "@/lib/loggers";
 
 const logger = createLogger({ service: "mcp-integration" });
@@ -204,14 +204,14 @@ export async function getAllMcpTools(): Promise<Record<string, unknown>> {
     const allTools: Record<string, unknown> = {};
 
     // Add integrated tools first (can be overridden by MCP server tools)
-    try {
-      const chatbotTool = getChatbotTool();
-      Object.assign(allTools, chatbotTool);
-    } catch (error) {
-      logger.warn("Failed to load chatbot tool", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
+    // try {
+    //   const chatbotTool = getChatbotTool();
+    //   Object.assign(allTools, chatbotTool);
+    // } catch (error) {
+    //   logger.warn("Failed to load chatbot tool", {
+    //     error: error instanceof Error ? error.message : String(error),
+    //   });
+    // }
 
     // Add MCP server tools (these override integrated tools with same name)
     for (const clientId of clientIds) {
