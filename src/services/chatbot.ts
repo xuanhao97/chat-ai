@@ -15,8 +15,7 @@ const logger = createLogger({ service: "chatbot" });
 /**
  * Chatbot API configuration
  */
-const CHATBOT_API_BASE_URL =
-  process.env.CHATBOT_API_URL || "https://ai-chat.arobid.com/api/v1.0";
+const CHATBOT_API_BASE_URL = process.env.CHATBOT_API_URL;
 
 /**
  * Chatbot API endpoint path
