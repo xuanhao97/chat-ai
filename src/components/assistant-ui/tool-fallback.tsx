@@ -8,6 +8,7 @@ import {
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { DotLoading } from "./dot-loading";
 
 export const ToolFallback: ToolCallMessagePartComponent = ({
   toolName,
@@ -19,6 +20,10 @@ export const ToolFallback: ToolCallMessagePartComponent = ({
 
   const isCancelled =
     status?.type === "incomplete" && status.reason === "cancelled";
+  // Tool is running if result is undefined and not cancelled
+  // Also check if status indicates it's incomplete but not cancelled
+  const isRunning =
+    (result === undefined || status?.type === "incomplete") && !isCancelled;
   const cancelledReason =
     isCancelled && status.error
       ? typeof status.error === "string"
@@ -36,6 +41,8 @@ export const ToolFallback: ToolCallMessagePartComponent = ({
       <div className="aui-tool-fallback-header flex items-center gap-2 px-4">
         {isCancelled ? (
           <XCircleIcon className="aui-tool-fallback-icon text-muted-foreground size-4" />
+        ) : isRunning ? (
+          <div className="aui-tool-fallback-icon size-4" />
         ) : (
           <CheckIcon className="aui-tool-fallback-icon size-4" />
         )}
@@ -45,12 +52,20 @@ export const ToolFallback: ToolCallMessagePartComponent = ({
             isCancelled && "text-muted-foreground line-through"
           )}
         >
-          {isCancelled ? "Công cụ đã hủy: " : "Đã sử dụng công cụ: "}
+          {isCancelled
+            ? "Công cụ đã hủy: "
+            : isRunning
+              ? "Đang thực thi công cụ: "
+              : "Đã sử dụng công cụ: "}
           <b>{toolName}</b>
         </p>
-        <Button onClick={() => setIsCollapsed(!isCollapsed)}>
-          {isCollapsed ? <ChevronUpIcon /> : <ChevronDownIcon />}
-        </Button>
+        {isRunning ? (
+          <DotLoading />
+        ) : (
+          <Button onClick={() => setIsCollapsed(!isCollapsed)}>
+            {isCollapsed ? <ChevronUpIcon /> : <ChevronDownIcon />}
+          </Button>
+        )}
       </div>
       {!isCollapsed && (
         <div className="aui-tool-fallback-content flex flex-col gap-2 border-t pt-2">

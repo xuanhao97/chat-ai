@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { MarkdownText } from "@/components/assistant-ui/markdown-text";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { ToolFallback } from "./tool-fallback";
+import { DotLoading } from "./dot-loading";
 
 export const Thread: FC = () => {
   return (
@@ -202,12 +203,25 @@ const EditComposer: FC = () => {
   );
 };
 
+const ThinkingIndicator: FC = () => {
+  return (
+    <div className="flex items-center gap-2 text-muted-foreground">
+      <span>Thinking</span>
+      <DotLoading />
+    </div>
+  );
+};
+
 const AssistantMessage: FC = () => {
   return (
     <MessagePrimitive.Root className="relative grid w-full max-w-[var(--thread-max-width)] grid-cols-[auto_auto_1fr] grid-rows-[auto_1fr] py-4">
       <div className="text-foreground col-span-2 col-start-2 row-start-1 my-1.5 max-w-[calc(var(--thread-max-width)*0.8)] leading-7 break-words">
         <MessagePrimitive.Parts
-          components={{ Text: MarkdownText, tools: { Fallback: ToolFallback } }}
+          components={{
+            Text: MarkdownText,
+            tools: { Fallback: ToolFallback },
+            Empty: ThinkingIndicator,
+          }}
         />
         <MessageError />
       </div>
